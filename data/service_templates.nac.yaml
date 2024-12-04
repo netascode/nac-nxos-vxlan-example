@@ -1,0 +1,59 @@
+nxos:
+  configuration_templates:
+    - name: L2_SERVICE
+      configuration:
+        vlans:
+          - id: ${vlan_id}
+            vni: 10${vlan_id}
+            name: L2_${vlan_id}
+        interfaces:
+          nve:
+            vnis:
+              - vni: 10${vlan_id}
+                ingress_replication_protocol: bgp
+        evpn:
+          vnis:
+            - vni: 10${vlan_id}
+              route_distinguisher: auto
+              route_target_imports: ["65000:10${vlan_id}"]
+              route_target_exports: ["65000:10${vlan_id}"]
+    - name: L3_SERVICE
+      configuration:
+        vrfs:
+          - name: ${name}
+            vni: 1${l3_vlan_id}
+            route_distinguisher: auto
+            address_families:
+              - address_family: ipv4_unicast
+                route_target_imports: ["65000:1${l3_vlan_id}"]
+                route_target_exports: ["65000:1${l3_vlan_id}"]
+                route_target_imports_evpn: ["65000:1${l3_vlan_id}"]
+                route_target_exports_evpn: ["65000:1${l3_vlan_id}"]
+        vlans:
+          - id: ${l3_vlan_id}
+            vni: 1${l3_vlan_id}
+            name: ${name}
+          - id: ${l2_vlan_id}
+            vni: 1${l2_vlan_id}
+            name: ${name}_${l2_vlan_id}
+        interfaces:
+          nve:
+            vnis:
+              - vni: 1${l3_vlan_id}
+                associate_vrf: true
+              - vni: 1${l2_vlan_id}
+                ingress_replication_protocol: bgp
+          vlans:
+            - id: ${l3_vlan_id}
+              vrf: ${name}
+              ip_forward: true
+            - id: ${l2_vlan_id}
+              vrf: ${name}
+              ipv4_address: 172.17.1.1/24
+              fabric_forwarding_mode: anycastGW
+        evpn:
+          vnis:
+            - vni: 1${l2_vlan_id}
+              route_distinguisher: auto
+              route_target_imports: ["65000:1${l2_vlan_id}"]
+              route_target_exports: ["65000:1${l2_vlan_id}"]

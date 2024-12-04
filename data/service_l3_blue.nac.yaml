@@ -1,0 +1,11 @@
+nxos:
+  device_groups:
+    - name: SERVICE_BLUE
+      devices:
+        - LEAF1
+        - LEAF2
+      configuration_templates: [L3_SERVICE]
+      variables:
+        name: BLUE
+        l3_vlan_id: 1010
+        l2_vlan_id: 1011

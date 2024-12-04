@@ -1,0 +1,116 @@
+nxos:
+  global:
+    configuration:
+      system:
+        hostname: ${hostname}
+        features:
+          - bfd
+          - bgp
+          - evpn
+          - fabric_forwarding
+          - interface_vlan
+          - nv_overlay
+          - ospf
+          - pim
+          - vn_segment
+        mtu: 9216
+      interfaces:
+        loopbacks:
+          - id: 0
+            interface_groups: [LOOPBACK_INTERFACE]
+            ipv4_address: ${lo0_ip}/32
+      routing:
+        ospf_processes:
+          - name: "1"
+            vrfs:
+              - vrf: default
+                areas:
+                  - area: 0.0.0.0
+        bgp:
+          vrfs:
+            - vrf: default
+              router_id: ${lo0_ip}
+        pim:
+          vrfs:
+            - vrf: default
+              anycast_rp_local_interface: lo0
+              anycast_rp_source_interface: lo0
+              rps:
+                - address: ${anycast_ip}
+
+  device_groups:
+    - name: LEAFS
+      configuration:
+        system:
+          fabric_forwarding:
+            anycast_gateway_mac: 20:20:00:00:10:12
+        interfaces:
+          loopbacks:
+            - id: 1
+              interface_groups: [LOOPBACK_INTERFACE]
+              ipv4_address: ${vtep_ip}/32
+          ethernets:
+            - id: 1/1
+              interface_groups: [FABRIC_INTERFACE]
+            - id: 1/2
+              interface_groups: [FABRIC_INTERFACE]
+          nve:
+            admin_state: true
+            advertise_virtual_mac: true
+            host_reachability_protocol: bgp
+            source_interface: lo1
+        routing:
+          bgp:
+            asn: "65000"
+            peer_templates:
+              - name: SPINE-PEERS
+                asn: "65000"
+                source_interface: lo0
+                address_families:
+                  - address_family: l2vpn_evpn
+                    send_community_standard: true
+                    send_community_extended: true
+            vrfs:
+              - vrf: default
+                neighbors:
+                  - ip: 10.1.100.1
+                    peer_template: SPINE-PEERS
+                  - ip: 10.1.100.2
+                    peer_template: SPINE-PEERS
+
+    - name: SPINES
+      configuration:
+        interfaces:
+          loopbacks:
+            - id: 100
+              interface_groups: [LOOPBACK_INTERFACE]
+              ipv4_address: 10.1.101.1/32
+          ethernets:
+            - id: 1/1
+              interface_groups: [FABRIC_INTERFACE]
+            - id: 1/2
+              interface_groups: [FABRIC_INTERFACE]
+        routing:
+          pim:
+            vrfs:
+              - vrf: default
+                anycast_rps:
+                  - address: ${anycast_ip}
+                    set_address: ${lo0_ip}
+          bgp:
+            asn: "65000"
+            peer_templates:
+              - name: LEAF-PEERS
+                asn: "65000"
+                source_interface: lo0
+                address_families:
+                  - address_family: l2vpn_evpn
+                    send_community_standard: true
+                    send_community_extended: true
+            vrfs:
+              - vrf: default
+                neighbors:
+                  - ip: 10.1.100.3
+                    peer_template: LEAF-PEERS
+                  - ip: 10.1.100.4
+                    peer_template: LEAF-PEERS

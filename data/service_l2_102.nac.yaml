@@ -1,0 +1,9 @@
+nxos:
+  device_groups:
+    - name: SERVICE_102
+      devices:
+        - LEAF1
+        - LEAF2
+      configuration_templates: [L2_SERVICE]
+      variables:
+        vlan_id: 102
