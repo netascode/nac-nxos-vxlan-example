@@ -3,16 +3,16 @@ nxos:
     configuration:
       system:
         hostname: ${hostname}
-        features:
-          - bfd
-          - bgp
-          - evpn
-          - fabric_forwarding
-          - interface_vlan
-          - nv_overlay
-          - ospf
-          - pim
-          - vn_segment
+        feature:
+          bfd: true
+          bgp: true
+          evpn: true
+          fabric_forwarding: true
+          interface_vlan: true
+          nv_overlay: true
+          ospf: true
+          pim: true
+          vn_segment: true
         mtu: 9216
       interfaces:
         loopbacks:
