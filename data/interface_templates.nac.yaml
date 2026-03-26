@@ -2,23 +2,23 @@ nxos:
   interface_groups:
     - name: FABRIC_INTERFACE
       configuration:
-        layer3: true
+        switchport:
+          enabled: false
         medium: p2p
-        ip_unnumbered: lo0
+        ip:
+          unnumbered: lo0
         ospf:
-          process_name: "1"
+          process: "1"
           area: 0.0.0.0
-          network_type: p2p
+          network: p2p
         pim:
-          admin_state: true
           sparse_mode: true
 
     - name: LOOPBACK_INTERFACE
       configuration:
         ospf:
-          process_name: "1"
+          process: "1"
           area: 0.0.0.0
-          network_type: p2p
+          network: p2p
         pim:
-          admin_state: true
           sparse_mode: true

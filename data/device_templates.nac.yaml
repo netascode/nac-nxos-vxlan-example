@@ -3,80 +3,77 @@ nxos:
     configuration:
       system:
         hostname: ${hostname}
-        feature:
-          bfd: true
-          bgp: true
-          evpn: true
-          fabric_forwarding: true
-          interface_vlan: true
-          nv_overlay: true
-          ospf: true
-          pim: true
-          vn_segment: true
         mtu: 9216
+      feature:
+        bfd: true
+        bgp: true
+        evpn: true
+        fabric_forwarding: true
+        interface_vlan: true
+        nv_overlay: true
+        ospf: true
+        pim: true
+        vn_segment_vlan_based: true
       interfaces:
         loopbacks:
           - id: 0
             interface_groups: [LOOPBACK_INTERFACE]
-            ipv4_address: ${lo0_ip}/32
+            ip:
+              address: ${lo0_ip}/32
       routing:
         ospf_processes:
           - name: "1"
-            vrfs:
-              - vrf: default
-                areas:
-                  - area: 0.0.0.0
+            areas:
+              - id: 0.0.0.0
         bgp:
-          vrfs:
-            - vrf: default
-              router_id: ${lo0_ip}
+          router_id: ${lo0_ip}
         pim:
-          vrfs:
-            - vrf: default
-              anycast_rp_local_interface: lo0
-              anycast_rp_source_interface: lo0
-              rps:
-                - address: ${anycast_ip}
+          anycast_rp_local_interface_type: loopback
+          anycast_rp_local_interface_id: "0"
+          anycast_rp_source_interface_type: loopback
+          anycast_rp_source_interface_id: "0"
+          rps:
+            - address: ${anycast_ip}
 
   device_groups:
     - name: LEAFS
       configuration:
-        system:
-          fabric_forwarding:
-            anycast_gateway_mac: 20:20:00:00:10:12
+        fabric_forwarding:
+          anycast_gateway_mac: "20:20:00:00:10:12"
         interfaces:
           loopbacks:
             - id: 1
               interface_groups: [LOOPBACK_INTERFACE]
-              ipv4_address: ${vtep_ip}/32
+              ip:
+                address: ${vtep_ip}/32
           ethernets:
             - id: 1/1
               interface_groups: [FABRIC_INTERFACE]
             - id: 1/2
               interface_groups: [FABRIC_INTERFACE]
           nve:
-            admin_state: true
-            advertise_virtual_mac: true
+            shutdown: false
+            advertise_virtual_rmac: true
             host_reachability_protocol: bgp
-            source_interface: lo1
+            source_interface_type: loopback
+            source_interface_id: "1"
         routing:
           bgp:
             asn: "65000"
             peer_templates:
               - name: SPINE-PEERS
-                asn: "65000"
-                source_interface: lo0
+                remote_as: "65000"
+                update_source_interface_type: loopback
+                update_source_interface_id: "0"
                 address_families:
-                  - address_family: l2vpn_evpn
+                  - address_family: l2vpn-evpn
                     send_community_standard: true
                     send_community_extended: true
-            vrfs:
-              - vrf: default
-                neighbors:
-                  - ip: 10.1.100.1
-                    peer_template: SPINE-PEERS
-                  - ip: 10.1.100.2
-                    peer_template: SPINE-PEERS
+            neighbors:
+              - ip: 10.1.100.1
+                inherit_peer: SPINE-PEERS
+              - ip: 10.1.100.2
+                inherit_peer: SPINE-PEERS
 
     - name: SPINES
       configuration:
@@ -84,7 +81,8 @@ nxos:
           loopbacks:
             - id: 100
               interface_groups: [LOOPBACK_INTERFACE]
-              ipv4_address: 10.1.101.1/32
+              ip:
+                address: "10.1.101.1/32"
           ethernets:
             - id: 1/1
               interface_groups: [FABRIC_INTERFACE]
@@ -92,25 +90,22 @@ nxos:
               interface_groups: [FABRIC_INTERFACE]
         routing:
           pim:
-            vrfs:
-              - vrf: default
-                anycast_rps:
-                  - address: ${anycast_ip}
-                    set_address: ${lo0_ip}
+            anycast_rps:
+              - address: ${anycast_ip}
+                set_address: ${lo0_ip}
           bgp:
             asn: "65000"
             peer_templates:
               - name: LEAF-PEERS
-                asn: "65000"
-                source_interface: lo0
+                remote_as: "65000"
+                update_source_interface_type: loopback
+                update_source_interface_id: "0"
                 address_families:
-                  - address_family: l2vpn_evpn
+                  - address_family: l2vpn-evpn
                     send_community_standard: true
                     send_community_extended: true
-            vrfs:
-              - vrf: default
-                neighbors:
-                  - ip: 10.1.100.3
-                    peer_template: LEAF-PEERS
-                  - ip: 10.1.100.4
-                    peer_template: LEAF-PEERS
+            neighbors:
+              - ip: 10.1.100.3
+                inherit_peer: LEAF-PEERS
+              - ip: 10.1.100.4
+                inherit_peer: LEAF-PEERS

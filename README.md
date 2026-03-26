@@ -1,4 +1,4 @@
-[![Terraform Version](https://img.shields.io/badge/terraform-%5E1.8-blue)](https://www.terraform.io)
+[![Terraform Version](https://img.shields.io/badge/terraform-%5E1.9-blue)](https://www.terraform.io)
 
 # Network-as-Code - Example for NX-OS VXLAN
 
@@ -6,7 +6,7 @@ This example is part of the Cisco [*Network as Code*](https://netascode.cisco.co
 
 ## Getting Started
 
-Install [Terraform](https://www.terraform.io/downloads) (> 1.8.0) and set environment variables with credentials:
+Install [Terraform](https://www.terraform.io/downloads) (> 1.9.0) and set environment variables with credentials:
 
 ```shell
 export NXOS_USERNAME=admin
