@@ -1,0 +1,42 @@
+# Underlay Leaf Template
+#
+# Variables
+# - bgp_asn: The BGP AS number
+# - vtep_ip: The IP address of the VTEP interface
+
+fabric_forwarding:
+  anycast_gateway_mac: "20:20:00:00:10:12"
+interfaces:
+  loopbacks:
+    - id: 1
+      interface_groups: [LOOPBACK_INTERFACE]
+      ip:
+        address: ${vtep_ip}/32
+  ethernets:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+    - id: 1/${index + 1}
+      interface_groups: [FABRIC_INTERFACE]
+%{ endfor }
+  nve:
+    shutdown: false
+    advertise_virtual_rmac: true
+    host_reachability_protocol: bgp
+    source_interface_type: loopback
+    source_interface_id: "1"
+routing:
+  bgp:
+    asn: "${bgp_asn}"
+    peer_templates:
+      - name: SPINE-PEERS
+        remote_as: "${bgp_asn}"
+        update_source_interface_type: loopback
+        update_source_interface_id: "0"
+        address_families:
+          - address_family: l2vpn-evpn
+            send_community_standard: true
+            send_community_extended: true
+    neighbors:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+      - ip: ${device.variables.lo0_ip}
+        inherit_peer: SPINE-PEERS
+%{ endfor }

@@ -1,0 +1,58 @@
+# Service L3 Template
+#
+# Variables
+# - bgp_asn: The BGP AS number
+# - name: The VRF name
+# - core_vlan_id: The core VLAN ID
+# - vlans: The list of VLANs
+#     - id: The VLAN ID
+
+vrfs:
+  - name: ${name}
+    vni: 1${core_vlan_id}
+    route_distinguisher: auto
+    address_families:
+      - address_family: ipv4-unicast
+        route_target_imports: ["${bgp_asn}:1${core_vlan_id}"]
+        route_target_exports: ["${bgp_asn}:1${core_vlan_id}"]
+        route_target_imports_evpn: ["${bgp_asn}:1${core_vlan_id}"]
+        route_target_exports_evpn: ["${bgp_asn}:1${core_vlan_id}"]
+vlan:
+  vlans:
+    - id: ${core_vlan_id}
+      vni: 1${core_vlan_id}
+      name: ${name}
+%{ for vlan in vlans }
+    - id: ${vlan.id}
+      vni: 1${vlan.id}
+      name: ${name}_${vlan.id}
+%{ endfor }
+interfaces:
+  nve:
+    vnis:
+      - vni: 1${core_vlan_id}
+        associate_vrf: true
+%{ for vlan in vlans }
+      - vni: 1${vlan.id}
+        ingress_replication_protocol: bgp
+%{ endfor }
+  vlans:
+    - id: ${core_vlan_id}
+      vrf: ${name}
+      ip:
+        forward: true
+%{ for vlan in vlans }
+    - id: ${vlan.id}
+      vrf: ${name}
+      ip:
+        address: 172.17.1.1/24
+      fabric_forwarding_mode: anycast-gw
+%{ endfor }
+evpn:
+  vnis:
+%{ for vlan in vlans }
+    - vni: 1${vlan.id}
+      rd: auto
+      route_target_imports: ["${bgp_asn}:1${vlan.id}"]
+      route_target_exports: ["${bgp_asn}:1${vlan.id}"]
+%{ endfor }

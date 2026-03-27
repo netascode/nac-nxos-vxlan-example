@@ -4,8 +4,9 @@ nxos:
       devices:
         - LEAF1
         - LEAF2
-      templates: [L3_SERVICE]
+      templates: [service_l3]
       variables:
         name: GREEN
-        l3_vlan_id: 1000
-        l2_vlan_id: 1001
+        core_vlan_id: 1000
+        vlans:
+          - id: 1001

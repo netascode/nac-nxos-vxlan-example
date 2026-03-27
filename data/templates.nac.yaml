@@ -1,0 +1,66 @@
+nxos:
+  templates:
+    - name: underlay_leaf
+      type: file
+      file: data/templates/underlay_leaf.yaml.tftpl
+
+    - name: underlay_spine
+      type: file
+      file: data/templates/underlay_spine.yaml.tftpl
+
+    - name: service_l2
+      type: file
+      file: data/templates/service_l2.yaml.tftpl
+
+    - name: service_l3
+      type: file
+      file: data/templates/service_l3.yaml.tftpl
+
+    - name: global
+      type: model
+      # Variables
+      # - hostname: The hostname of the device
+      # - lo0_ip: The IP address of the loopback0 interface
+      configuration:
+        system:
+          hostname: ${hostname}
+          mtu: 9216
+        spanning_tree:
+          mode: mst
+        feature:
+          bfd: true
+          bgp: true
+          evpn: true
+          fabric_forwarding: true
+          interface_vlan: true
+          nv_overlay: true
+          ospf: true
+          pim: true
+          vn_segment_vlan_based: true
+        interfaces:
+          loopbacks:
+            - id: 0
+              interface_groups: [LOOPBACK_INTERFACE]
+              ip:
+                address: ${lo0_ip}/32
+
+    - name: underlay_fabric
+      type: model
+      # Variables
+      # - lo0_ip: The IP address of the loopback0 interface
+      # - anycast_ip: The IP address of the anycast RP
+      configuration:
+        routing:
+          ospf_processes:
+            - name: "1"
+              areas:
+                - id: 0.0.0.0
+          bgp:
+            router_id: ${lo0_ip}
+          pim:
+            anycast_rp_local_interface_type: loopback
+            anycast_rp_local_interface_id: "0"
+            anycast_rp_source_interface_type: loopback
+            anycast_rp_source_interface_id: "0"
+            rps:
+              - address: ${anycast_ip}

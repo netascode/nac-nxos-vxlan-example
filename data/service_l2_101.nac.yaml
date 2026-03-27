@@ -4,6 +4,7 @@ nxos:
       devices:
         - LEAF1
         - LEAF2
-      templates: [L2_SERVICE]
+      templates: [service_l2]
       variables:
         vlan_id: 101
+        mcast_group: 225.1.1.1

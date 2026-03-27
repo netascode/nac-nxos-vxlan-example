@@ -1,0 +1,41 @@
+# Underlay Spine Template
+#
+# Variables
+# - bgp_asn: The BGP AS number
+# - anycast_ip: The IP address of the anycast RP
+# - lo0_ip: The IP address of the loopback0 interface
+
+interfaces:
+  loopbacks:
+    - id: 100
+      interface_groups: [LOOPBACK_INTERFACE]
+      ip:
+        address: ${anycast_ip}/32
+  ethernets:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+    - id: 1/${index + 1}
+      interface_groups: [FABRIC_INTERFACE]
+%{ endfor }
+routing:
+  pim:
+    anycast_rps:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.lo0_ip != lo0_ip] }
+      - address: ${anycast_ip}
+        set_address: ${device.variables.lo0_ip}
+%{ endfor }
+  bgp:
+    asn: "${bgp_asn}"
+    peer_templates:
+      - name: LEAF-PEERS
+        remote_as: "${bgp_asn}"
+        update_source_interface_type: loopback
+        update_source_interface_id: "0"
+        address_families:
+          - address_family: l2vpn-evpn
+            send_community_standard: true
+            send_community_extended: true
+    neighbors:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+      - ip: ${device.variables.lo0_ip}
+        inherit_peer: LEAF-PEERS
+%{ endfor }
