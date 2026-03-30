@@ -10,7 +10,8 @@ terraform {
 # export NXOS_PASSWORD=password
 
 module "nxos" {
-  source = "github.com/netascode/terraform-nxos-nac-nxos"
+  source  = "netascode/nac-nxos/nxos"
+  version = "0.1.0"
 
   yaml_directories = ["data/"]
 }
