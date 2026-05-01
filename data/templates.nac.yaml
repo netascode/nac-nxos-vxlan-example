@@ -2,19 +2,19 @@ nxos:
   templates:
     - name: underlay_leaf
       type: file
-      file: data/templates/underlay_leaf.yaml.tftpl
+      file: templates/underlay_leaf.yaml.tftpl
 
     - name: underlay_spine
       type: file
-      file: data/templates/underlay_spine.yaml.tftpl
+      file: templates/underlay_spine.yaml.tftpl
 
     - name: service_l2
       type: file
-      file: data/templates/service_l2.yaml.tftpl
+      file: templates/service_l2.yaml.tftpl
 
     - name: service_l3
       type: file
-      file: data/templates/service_l3.yaml.tftpl
+      file: templates/service_l3.yaml.tftpl
 
     - name: global
       type: model
