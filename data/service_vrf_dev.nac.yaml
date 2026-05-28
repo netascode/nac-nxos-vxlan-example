@@ -1,12 +1,11 @@
 nxos:
   device_groups:
-    - name: SERVICE_BLUE
+    - name: SERVICE_VRF_DEV
       devices:
         - LEAF1
         - LEAF2
       templates: [service_l3]
       variables:
-        name: BLUE
-        core_vlan_id: 1010
-        vlans:
-          - id: 1011
+        name: DEV
+        vrf_id: 2
+        vlans: []

@@ -1,0 +1,38 @@
+# Underlay IP: BFD, loopbacks, fabric interfaces
+# Variables: leaf_id or spine_id
+# Optional: vtep_prefix (default: 10.1.2), leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64)
+
+feature:
+  bfd: true
+
+interfaces:
+  loopbacks:
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+    - id: 1
+      ip:
+        address: ${try(vtep_prefix, "10.1.2")}.${leaf_id}/32
+%{ endfor }
+
+  ethernets:
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+    - id: 1/${index + try(leaf_fabric_interface_start, 1)}
+      mtu: 9216
+      switchport:
+        enabled: false
+      medium: p2p
+      ip:
+        unnumbered: lo0
+%{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+    - id: ${floor(index / (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1)) + try(spine_fabric_module_start, 1)}/${index % (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1) + try(spine_fabric_interface_start, 1)}
+      mtu: 9216
+      switchport:
+        enabled: false
+      medium: p2p
+      ip:
+        unnumbered: lo0
+%{ endfor }
+%{ endfor }

@@ -1,0 +1,56 @@
+# Underlay IS-IS: instance UNDERLAY, interface assignments
+# Variables: leaf_id or spine_id
+# Optional: leaf_loopback_prefix (default: 10.1.1), spine_loopback_prefix (default: 10.1.0), leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64)
+
+feature:
+  isis: true
+
+routing:
+  isis_instances:
+    - name: UNDERLAY
+      is_type: level-2
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+      net: 49.0001.${regexreplace(format("%03d%03d%03d%03d", tonumber(element(split(".", try(leaf_loopback_prefix, "10.1.1")), 0)), tonumber(element(split(".", try(leaf_loopback_prefix, "10.1.1")), 1)), tonumber(element(split(".", try(leaf_loopback_prefix, "10.1.1")), 2)), leaf_id), "(.{4})(.{4})(.{4})", "$1.$2.$3")}.00
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+      net: 49.0001.${regexreplace(format("%03d%03d%03d%03d", tonumber(element(split(".", try(spine_loopback_prefix, "10.1.0")), 0)), tonumber(element(split(".", try(spine_loopback_prefix, "10.1.0")), 1)), tonumber(element(split(".", try(spine_loopback_prefix, "10.1.0")), 2)), spine_id), "(.{4})(.{4})(.{4})", "$1.$2.$3")}.00
+%{ endfor }
+      address_families:
+        - address_family: ipv4-unicast
+
+interfaces:
+  loopbacks:
+    - id: 0
+      isis:
+        instance_name: UNDERLAY
+        network_point_to_point: true
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+    - id: 1
+      isis:
+        instance_name: UNDERLAY
+        network_point_to_point: true
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+    - id: 254
+      isis:
+        instance_name: UNDERLAY
+        network_point_to_point: true
+%{ endfor }
+
+  ethernets:
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+    - id: 1/${index + try(leaf_fabric_interface_start, 1)}
+      isis:
+        instance_name: UNDERLAY
+        network_point_to_point: true
+%{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+    - id: ${floor(index / (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1)) + try(spine_fabric_module_start, 1)}/${index % (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1) + try(spine_fabric_interface_start, 1)}
+      isis:
+        instance_name: UNDERLAY
+        network_point_to_point: true
+%{ endfor }
+%{ endfor }

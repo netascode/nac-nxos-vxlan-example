@@ -1,12 +1,36 @@
 nxos:
   templates:
-    - name: underlay_leaf
+    - name: global
       type: file
-      file: templates/underlay_leaf.yaml.tftpl
+      file: templates/global.yaml.tftpl
 
-    - name: underlay_spine
+    - name: underlay_ospf
       type: file
-      file: templates/underlay_spine.yaml.tftpl
+      file: templates/underlay_ospf.yaml.tftpl
+
+    - name: underlay_ip
+      type: file
+      file: templates/underlay_ip.yaml.tftpl
+
+    - name: underlay_isis
+      type: file
+      file: templates/underlay_isis.yaml.tftpl
+
+    - name: underlay_multicast
+      type: file
+      file: templates/underlay_multicast.yaml.tftpl
+
+    - name: overlay_bgp
+      type: file
+      file: templates/overlay_bgp.yaml.tftpl
+
+    - name: overlay_vxlan
+      type: file
+      file: templates/overlay_vxlan.yaml.tftpl
+
+    - name: underlay_vpc
+      type: file
+      file: templates/underlay_vpc.yaml.tftpl
 
     - name: service_l2
       type: file
@@ -15,52 +39,3 @@ nxos:
     - name: service_l3
       type: file
       file: templates/service_l3.yaml.tftpl
-
-    - name: global
-      type: model
-      # Variables
-      # - hostname: The hostname of the device
-      # - lo0_ip: The IP address of the loopback0 interface
-      configuration:
-        system:
-          hostname: ${hostname}
-          mtu: 9216
-        spanning_tree:
-          mode: mst
-        feature:
-          bfd: true
-          bgp: true
-          evpn: true
-          fabric_forwarding: true
-          interface_vlan: true
-          nv_overlay: true
-          ospf: true
-          pim: true
-          vn_segment_vlan_based: true
-        interfaces:
-          loopbacks:
-            - id: 0
-              interface_groups: [LOOPBACK_INTERFACE]
-              ip:
-                address: ${lo0_ip}/32
-
-    - name: underlay_fabric
-      type: model
-      # Variables
-      # - lo0_ip: The IP address of the loopback0 interface
-      # - anycast_ip: The IP address of the anycast RP
-      configuration:
-        routing:
-          ospf_processes:
-            - name: "1"
-              areas:
-                - id: 0.0.0.0
-          bgp:
-            router_id: ${lo0_ip}
-          pim:
-            anycast_rp_local_interface_type: loopback
-            anycast_rp_local_interface_id: "0"
-            anycast_rp_source_interface_type: loopback
-            anycast_rp_source_interface_id: "0"
-            rps:
-              - address: ${anycast_ip}

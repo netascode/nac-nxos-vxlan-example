@@ -1,0 +1,17 @@
+nxos:
+  device_groups:
+    - name: SERVICE_VRF_PROD
+      devices:
+        - LEAF1
+        - LEAF2
+      templates: [service_l3]
+      variables:
+        name: PROD
+        vrf_id: 1
+        vlans:
+          - id: 2001
+            ip_address: 10.10.10.1/24
+          - id: 2002
+            ip_address: 10.10.20.1/24
+          - id: 2003
+            ip_address: 10.10.30.1/24

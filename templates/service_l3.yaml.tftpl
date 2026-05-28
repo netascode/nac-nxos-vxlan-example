@@ -1,58 +1,44 @@
-# Service L3 Template
-#
-# Variables
-# - bgp_asn: The BGP AS number
-# - name: The VRF name
-# - core_vlan_id: The core VLAN ID
-# - vlans: The list of VLANs
-#     - id: The VLAN ID
+# L3 service: VRF with L3VNI, SVIs, EVPN
+# Variables: name, vrf_id, vlans (list of id, ip_address)
+# Optional: l3vni (default: l3vni_base + vrf_id), l3vni_base (default: 50000), l2vni_base (default: 30000), per-vlan vni override
 
 vrfs:
   - name: ${name}
-    vni: 1${core_vlan_id}
+    vni: ${try(l3vni, try(l3vni_base, 50000) + vrf_id)}
+    l3vni: true
     route_distinguisher: auto
     address_families:
       - address_family: ipv4-unicast
-        route_target_imports: ["${bgp_asn}:1${core_vlan_id}"]
-        route_target_exports: ["${bgp_asn}:1${core_vlan_id}"]
-        route_target_imports_evpn: ["${bgp_asn}:1${core_vlan_id}"]
-        route_target_exports_evpn: ["${bgp_asn}:1${core_vlan_id}"]
+        route_target_both_auto: true
+        route_target_both_auto_evpn: true
+
 vlan:
   vlans:
-    - id: ${core_vlan_id}
-      vni: 1${core_vlan_id}
-      name: ${name}
 %{ for vlan in vlans }
     - id: ${vlan.id}
-      vni: 1${vlan.id}
+      vn_segment: ${try(vlan.vni, try(l2vni_base, 30000) + vlan.id)}
       name: ${name}_${vlan.id}
 %{ endfor }
+
 interfaces:
   nve:
     vnis:
-      - vni: 1${core_vlan_id}
-        associate_vrf: true
 %{ for vlan in vlans }
-      - vni: 1${vlan.id}
-        ingress_replication_protocol: bgp
+      - vni: ${try(vlan.vni, try(l2vni_base, 30000) + vlan.id)}
 %{ endfor }
   vlans:
-    - id: ${core_vlan_id}
-      vrf: ${name}
-      ip:
-        forward: true
 %{ for vlan in vlans }
     - id: ${vlan.id}
       vrf: ${name}
       ip:
-        address: 172.17.1.1/24
+        address: ${vlan.ip_address}
       fabric_forwarding_mode: anycast-gw
 %{ endfor }
+
 evpn:
   vnis:
 %{ for vlan in vlans }
-    - vni: 1${vlan.id}
+    - vni: ${try(vlan.vni, try(l2vni_base, 30000) + vlan.id)}
       rd: auto
-      route_target_imports: ["${bgp_asn}:1${vlan.id}"]
-      route_target_exports: ["${bgp_asn}:1${vlan.id}"]
+      route_target_both_auto: true
 %{ endfor }

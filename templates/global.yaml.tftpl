@@ -1,0 +1,32 @@
+# Global device settings: hostname, MTU, spanning-tree, loopback0
+# Variables: leaf_id or spine_id
+# Optional: hostname (default: device name), leaf_loopback_prefix (default: 10.1.1), spine_loopback_prefix (default: 10.1.0)
+
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+system:
+  hostname: ${try(hostname, self.name)}
+  mtu: 9216
+
+spanning_tree:
+  mode: mst
+
+interfaces:
+  loopbacks:
+    - id: 0
+      ip:
+        address: ${try(leaf_loopback_prefix, "10.1.1")}.${leaf_id}/32
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+system:
+  hostname: ${try(hostname, self.name)}
+  mtu: 9216
+
+spanning_tree:
+  mode: mst
+
+interfaces:
+  loopbacks:
+    - id: 0
+      ip:
+        address: ${try(spine_loopback_prefix, "10.1.0")}.${spine_id}/32
+%{ endfor }

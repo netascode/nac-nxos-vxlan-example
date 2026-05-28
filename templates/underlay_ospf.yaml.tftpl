@@ -1,0 +1,54 @@
+# Underlay OSPF: process 1, area 0, interface assignments
+# Variables: leaf_id or spine_id
+# Optional: leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64)
+
+feature:
+  ospf: true
+
+routing:
+  ospf_processes:
+    - name: UNDERLAY
+      areas:
+        - id: 0
+
+interfaces:
+  loopbacks:
+    - id: 0
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+    - id: 1
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+    - id: 254
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
+%{ endfor }
+
+  ethernets:
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+    - id: 1/${index + try(leaf_fabric_interface_start, 1)}
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
+%{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+    - id: ${floor(index / (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1)) + try(spine_fabric_module_start, 1)}/${index % (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1) + try(spine_fabric_interface_start, 1)}
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
+%{ endfor }
+%{ endfor }

@@ -1,0 +1,30 @@
+# vPC: domain, peer-gateway, keepalive via management, VTEP VIP
+# Variables: leaf_id, mgmt_ip
+# Optional: vtep_vip_prefix (default: 10.1.3)
+
+feature:
+  vpc: true
+
+vpc:
+  domain_id: ${floor((leaf_id + 1) / 2)}
+  peer_gateway: true
+  ip_arp_synchronize: true
+  ipv6_nd_synchronize: true
+  auto_recovery: true
+  delay_restore: 150
+  delay_restore_interface_vlan: 30
+  keepalive:
+    source_ip: ${mgmt_ip}
+%{ for device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && floor((d.variables.leaf_id + 1) / 2) == floor((leaf_id + 1) / 2) && d.variables.leaf_id != leaf_id] }
+    destination_ip: ${device.variables.mgmt_ip}
+%{ endfor }
+
+interfaces:
+  loopbacks:
+    - id: 1
+      ip:
+        secondary_addresses:
+          - address: ${try(vtep_vip_prefix, "10.1.3")}.${floor((leaf_id + 1) / 2)}/32
+
+  nve:
+    advertise_virtual_rmac: true

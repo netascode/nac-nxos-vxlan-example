@@ -1,0 +1,53 @@
+# Underlay multicast: PIM, anycast RP
+# Variables: leaf_id or spine_id, anycast_rp_ip
+# Optional: leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64), spine_loopback_prefix (default: 10.1.0)
+
+feature:
+  pim: true
+
+routing:
+  pim:
+    rps:
+      - address: ${anycast_rp_ip}
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+    # Anycast RP peer set
+    anycast_rps:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id != spine_id] }
+      - address: ${anycast_rp_ip}
+        set_address: ${try(spine_loopback_prefix, "10.1.0")}.${device.variables.spine_id}
+%{ endfor }
+%{ endfor }
+
+interfaces:
+  loopbacks:
+    - id: 0
+      pim:
+        sparse_mode: true
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+    - id: 1
+      pim:
+        sparse_mode: true
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+    - id: 254
+      pim:
+        sparse_mode: true
+      ip:
+        address: ${anycast_rp_ip}/32
+%{ endfor }
+
+  ethernets:
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+    - id: 1/${index + try(leaf_fabric_interface_start, 1)}
+      pim:
+        sparse_mode: true
+%{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+    - id: ${floor(index / (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1)) + try(spine_fabric_module_start, 1)}/${index % (try(spine_fabric_interface_max, 64) - try(spine_fabric_interface_start, 1) + 1) + try(spine_fabric_interface_start, 1)}
+      pim:
+        sparse_mode: true
+%{ endfor }
+%{ endfor }

@@ -1,0 +1,49 @@
+# Overlay BGP: iBGP EVPN peering between leafs and spines
+# Variables: leaf_id or spine_id, bgp_asn
+# Optional: leaf_loopback_prefix (default: 10.1.1), spine_loopback_prefix (default: 10.1.0)
+
+feature:
+  bgp: true
+  evpn: true
+
+routing:
+  bgp:
+    asn: ${bgp_asn}
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+    router_id: ${try(leaf_loopback_prefix, "10.1.1")}.${leaf_id}
+    peer_templates:
+      - name: SPINE-PEERS
+        remote_as: ${bgp_asn}
+        update_source_interface_type: loopback
+        update_source_interface_id: 0
+        address_families:
+          - address_family: l2vpn-evpn
+            send_community_standard: true
+            send_community_extended: true
+    neighbors:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
+      - ip: ${try(spine_loopback_prefix, "10.1.0")}.${device.variables.spine_id}
+        inherit_peer: SPINE-PEERS
+%{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
+    router_id: ${try(spine_loopback_prefix, "10.1.0")}.${spine_id}
+    address_families:
+      - address_family: l2vpn-evpn
+        retain_route_target_all: true
+    peer_templates:
+      - name: LEAF-PEERS
+        remote_as: ${bgp_asn}
+        update_source_interface_type: loopback
+        update_source_interface_id: 0
+        address_families:
+          - address_family: l2vpn-evpn
+            send_community_standard: true
+            send_community_extended: true
+            route_reflector_client: true
+    neighbors:
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS")] }
+      - ip: ${try(leaf_loopback_prefix, "10.1.1")}.${device.variables.leaf_id}
+        inherit_peer: LEAF-PEERS
+%{ endfor }
+%{ endfor }

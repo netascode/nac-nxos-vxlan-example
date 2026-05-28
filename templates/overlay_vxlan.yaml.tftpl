@@ -1,0 +1,17 @@
+# Overlay VXLAN: NVE interface, anycast gateway, suppress-ARP, ingress replication
+# Variables: anycast_gw_mac
+
+feature:
+  nv_overlay: true
+  vn_segment_vlan_based: true
+  fabric_forwarding: true
+  interface_vlan: true
+fabric_forwarding:
+  anycast_gateway_mac: ${anycast_gw_mac}
+interfaces:
+  nve:
+    host_reachability_protocol: bgp
+    source_interface_type: loopback
+    source_interface_id: 1
+    global_suppress_arp: true
+    global_ingress_replication_protocol_bgp: true

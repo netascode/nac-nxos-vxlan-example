@@ -1,10 +1,10 @@
 nxos:
   device_groups:
-    - name: SERVICE_102
+    - name: SERVICE_PROD_APP
       devices:
         - LEAF1
         - LEAF2
       templates: [service_l2]
       variables:
-        vlan_id: 102
-        mcast_group: 225.1.1.2
+        vlan_id: 1002
+        vlan_name: PROD_APP

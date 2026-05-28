@@ -1,27 +1,18 @@
-# Service L2 Template
-#
-# Variables
-# - vlan_id: The VLAN ID
-# - mcast_group: The multicast group, can be empty to use ingress replication
-# - bgp_asn: The BGP AS number
+# L2 service: VLAN, VNI, EVPN
+# Variables: vlan_id, vlan_name
+# Optional: vni (default: l2vni_base + vlan_id), l2vni_base (default: 30000)
 
 vlan:
   vlans:
     - id: ${vlan_id}
-      vni: 10${vlan_id}
-      name: L2_${vlan_id}
+      vn_segment: ${try(vni, try(l2vni_base, 30000) + vlan_id)}
+      name: ${vlan_name}
 interfaces:
   nve:
     vnis:
-      - vni: 10${vlan_id}
-%{ if mcast_group == "" }
-        ingress_replication_protocol: bgp
-%{ else }
-        mcast_group: ${mcast_group}
-%{ endif }
+      - vni: ${try(vni, try(l2vni_base, 30000) + vlan_id)}
 evpn:
   vnis:
-    - vni: 10${vlan_id}
+    - vni: ${try(vni, try(l2vni_base, 30000) + vlan_id)}
       rd: auto
-      route_target_imports: ["${bgp_asn}:10${vlan_id}"]
-      route_target_exports: ["${bgp_asn}:10${vlan_id}"]
+      route_target_both_auto: true

@@ -1,39 +1,61 @@
 nxos:
   global:
     variables:
-      anycast_ip: 10.1.101.1
+      bgp_asn: 65000
+      anycast_rp_ip: 10.254.254.1
+      anycast_gw_mac: 00:00:22:22:33:33
+
+  device_groups:
+    - name: FABRIC
+      templates:
+        - global
+        - underlay_ip
+        - underlay_ospf
+        - underlay_multicast
+        - overlay_bgp
+    - name: LEAFS
+      templates:
+        - overlay_vxlan
+    - name: SPINES
+    - name: VPC_LEAFS
+      templates:
+        - underlay_vpc
 
   devices:
     - name: LEAF1
       url: https://10.1.1.1
       device_groups:
+        - FABRIC
         - LEAFS
+        - VPC_LEAFS
       variables:
-        hostname: LEAF1
-        lo0_ip: 10.1.100.3
-        vtep_ip: 10.1.200.1
+        mgmt_ip: 10.1.1.1
+        leaf_id: 1
 
     - name: LEAF2
       url: https://10.1.1.2
       device_groups:
+        - FABRIC
         - LEAFS
+        - VPC_LEAFS
       variables:
-        hostname: LEAF2
-        lo0_ip: 10.1.100.4
-        vtep_ip: 10.1.200.2
+        mgmt_ip: 10.1.1.2
+        leaf_id: 2
 
     - name: SPINE1
       url: https://10.1.1.3
       device_groups:
+        - FABRIC
         - SPINES
       variables:
-        hostname: SPINE1
-        lo0_ip: 10.1.100.1
+        mgmt_ip: 10.1.1.3
+        spine_id: 1
 
     - name: SPINE2
       url: https://10.1.1.4
       device_groups:
+        - FABRIC
         - SPINES
       variables:
-        hostname: SPINE2
-        lo0_ip: 10.1.100.2
+        mgmt_ip: 10.1.1.4
+        spine_id: 2
