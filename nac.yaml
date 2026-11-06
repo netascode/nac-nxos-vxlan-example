@@ -1,0 +1,6 @@
+render:
+  target: module.nxos.local_sensitive_file.model
+  output: model.yaml
+
+env:
+  required: [NXOS_USERNAME, NXOS_PASSWORD]

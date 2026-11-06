@@ -392,3 +392,13 @@ $RECYCLE.BIN/
 *.tfstate
 *.tfstate.backup
 *.tfplan
+
+# nac
+/model.yaml
+plan.txt
+plan.json
+validate.txt
+test.txt
+tests/results/
+.pabotsuitenames
+*.log

@@ -7,7 +7,7 @@ feature:
 
 routing:
   pim:
-    rps:
+    rp_addresses:
       - address: ${anycast_rp_ip}
 %{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
     # Anycast RP peer set
