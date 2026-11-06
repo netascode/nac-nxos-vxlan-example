@@ -6,7 +6,7 @@ This example is part of the Cisco [*Network as Code*](https://netascode.cisco.co
 
 ## Setup
 
-All steps are driven by the [`nac`](https://github.com/netascode/nac) CLI, an umbrella tool wrapping Terraform/OpenTofu, [nac-validate](https://github.com/netascode/nac-validate) and [nac-test](https://github.com/netascode/nac-test). Its settings (render target, required environment variables) are defined in [`nac.yaml`](https://github.com/netascode/nac-nxos-vxlan-example/blob/main/nac.yaml).
+All steps are driven by the [`nac`](https://github.com/netascode/nac) CLI, an umbrella tool wrapping Terraform/OpenTofu, [nac-validate](https://github.com/netascode/nac-validate) and [nac-test](https://github.com/netascode/nac-test).
 
 Install [Terraform](https://www.terraform.io/downloads) (> 1.9.0) or [OpenTofu](https://opentofu.org/docs/intro/install/), and the `nac` CLI:
 
