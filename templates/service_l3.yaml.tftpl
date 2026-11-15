@@ -23,6 +23,8 @@ vlan:
 interfaces:
   nve:
     vnis:
+      - vni: ${try(l3vni, try(l3vni_base, 50000) + vrf_id)}
+        associate_vrf: true
 %{ for vlan in vlans }
       - vni: ${try(vlan.vni, try(l2vni_base, 30000) + vlan.id)}
 %{ endfor }
