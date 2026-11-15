@@ -1,6 +1,24 @@
-# L3 service: VRF with L3VNI, SVIs, EVPN
-# Variables: name, vrf_id, vlans (list of id, ip_address)
-# Optional: l3vni (default: l3vni_base + vrf_id), l3vni_base (default: 50000), l2vni_base (default: 30000), per-vlan vni override
+# L3 service: VRF with L3VNI, BGP VRF, SVIs, L2VNIs, EVPN
+#
+# Variables:
+#   name                          VRF name
+#   vrf_id                        VRF number, used to derive the L3VNI
+#   vlans                         List of SVIs, each with:
+#     id                          VLAN ID
+#     ip_address                  Anycast gateway address with prefix length
+#     vni                         L2VNI (optional, default: l2vni_base + id)
+#     mcast_group                 BUM multicast group of the VNI (optional), overrides l2_mcast_group of underlay_multicast
+#
+# Optional variables:
+#   l3vni                         L3VNI (default: l3vni_base + vrf_id)
+#   l3vni_base                    Base for derived L3VNIs (default: 50000)
+#   l2vni_base                    Base for derived L2VNIs (default: 30000)
+#   subnet_route_tag              Route tag of the SVI subnets, must match overlay_vxlan (default: 12345)
+#
+# Device group variables are merged per device, so an optional variable set in one group also applies to the other
+# groups of the same device. Set optional variables in every group using this template or in none.
+#
+# The SVI subnets are redistributed into BGP EVPN with the route-map fabric-rmap-redist-subnet of overlay_vxlan.
 
 vrfs:
   - name: ${name}
@@ -11,6 +29,16 @@ vrfs:
       - address_family: ipv4-unicast
         route_target_both_auto: true
         route_target_both_auto_evpn: true
+
+routing:
+  bgp:
+    vrfs:
+      - vrf: ${name}
+        address_families:
+          - address_family: ipv4-unicast
+            redistributions:
+              - protocol: direct
+                route_map: fabric-rmap-redist-subnet
 
 vlan:
   vlans:
@@ -27,6 +55,9 @@ interfaces:
         associate_vrf: true
 %{ for vlan in vlans }
       - vni: ${try(vlan.vni, try(l2vni_base, 30000) + vlan.id)}
+%{ if try(vlan.mcast_group, null) != null }
+        mcast_group: ${vlan.mcast_group}
+%{ endif }
 %{ endfor }
   vlans:
 %{ for vlan in vlans }
@@ -34,6 +65,7 @@ interfaces:
       vrf: ${name}
       ip:
         address: ${vlan.ip_address}
+        tag: ${try(subnet_route_tag, 12345)}
       fabric_forwarding_mode: anycast-gateway
 %{ endfor }
 

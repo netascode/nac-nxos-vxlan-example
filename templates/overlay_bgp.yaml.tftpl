@@ -1,6 +1,12 @@
-# Overlay BGP: iBGP EVPN peering between leafs and spines
-# Variables: leaf_id or spine_id, bgp_asn
-# Optional: leaf_loopback_prefix (default: 10.1.1), spine_loopback_prefix (default: 10.1.0)
+# Overlay BGP: iBGP EVPN peering between leafs and spines (spines are route reflectors)
+#
+# Variables:
+#   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
+#   bgp_asn                       BGP AS number of the fabric
+#
+# Optional variables:
+#   leaf_loopback_prefix          First three octets of the leaf loopback0 address (default: 10.1.1)
+#   spine_loopback_prefix         First three octets of the spine loopback0 address (default: 10.1.0)
 
 feature:
   bgp: true

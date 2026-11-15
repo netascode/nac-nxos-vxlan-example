@@ -28,6 +28,10 @@ nxos:
       type: file
       file: templates/overlay_vxlan.yaml.tftpl
 
+    - name: overlay_ingress_replication
+      type: file
+      file: templates/overlay_ingress_replication.yaml.tftpl
+
     - name: underlay_vpc
       type: file
       file: templates/underlay_vpc.yaml.tftpl

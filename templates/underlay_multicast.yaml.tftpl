@@ -1,6 +1,20 @@
-# Underlay multicast: PIM, anycast RP
-# Variables: leaf_id or spine_id, anycast_rp_ip
-# Optional: leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64), spine_loopback_prefix (default: 10.1.0)
+# Underlay multicast: PIM, anycast RP, BUM replication with a global multicast group for all L2VNIs
+#
+# Variables:
+#   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
+#   anycast_rp_ip                 Anycast RP address shared by the spines
+#
+# Optional variables:
+#   l2_mcast_group                BUM multicast group of all L2VNIs (default: 239.1.1.1)
+#   spine_loopback_prefix         First three octets of the spine loopback0 address (default: 10.1.0)
+#   vpc_backup_vlan               VLAN of the vPC backup SVI (default: 3600)
+#   leaf_fabric_interface_start   First leaf uplink port on module 1 (default: 1)
+#   spine_fabric_module_start     First spine module with leaf-facing ports (default: 1)
+#   spine_fabric_interface_start  First leaf-facing port per spine module (default: 1)
+#   spine_fabric_interface_max    Last leaf-facing port per spine module (default: 64)
+#
+# Alternative to overlay_ingress_replication, use one of the two.
+# Per-VNI multicast groups can be set with the mcast_group variable of service_l2 and service_l3.
 
 feature:
   pim: true
@@ -10,9 +24,9 @@ routing:
     rp_addresses:
       - address: ${anycast_rp_ip}
 %{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }
-    # Anycast RP peer set
+    # Anycast RP set: all RPs including the local one (RFC 4610)
     anycast_rps:
-%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id != spine_id] }
+%{ for index, device in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES")] }
       - address: ${anycast_rp_ip}
         set_address: ${try(spine_loopback_prefix, "10.1.0")}.${device.variables.spine_id}
 %{ endfor }
@@ -50,4 +64,16 @@ interfaces:
       pim:
         sparse_mode: true
 %{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "VPC_LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+
+  vlans:
+    - id: ${try(vpc_backup_vlan, 3600)}
+      pim:
+        sparse_mode: true
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+
+  nve:
+    global_mcast_group_l2: ${try(l2_mcast_group, "239.1.1.1")}
 %{ endfor }

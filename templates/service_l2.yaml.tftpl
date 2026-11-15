@@ -1,6 +1,16 @@
-# L2 service: VLAN, VNI, EVPN
-# Variables: vlan_id, vlan_name
-# Optional: vni (default: l2vni_base + vlan_id), l2vni_base (default: 30000)
+# L2 service: VLAN, L2VNI, EVPN
+#
+# Variables:
+#   vlan_id                       VLAN ID
+#   vlan_name                     VLAN name
+#
+# Optional variables:
+#   vni                           L2VNI (default: l2vni_base + vlan_id)
+#   l2vni_base                    Base for derived L2VNIs (default: 30000)
+#   mcast_group                   BUM multicast group of the VNI, overrides l2_mcast_group of underlay_multicast
+#
+# Device group variables are merged per device, so an optional variable set in one group also applies to the other
+# groups of the same device. Set optional variables in every group using this template or in none.
 
 vlan:
   vlans:
@@ -11,6 +21,9 @@ interfaces:
   nve:
     vnis:
       - vni: ${try(vni, try(l2vni_base, 30000) + vlan_id)}
+%{ if try(mcast_group, null) != null }
+        mcast_group: ${mcast_group}
+%{ endif }
 evpn:
   vnis:
     - vni: ${try(vni, try(l2vni_base, 30000) + vlan_id)}

@@ -1,23 +1,48 @@
-# vPC: domain, peer-gateway, keepalive via management, VTEP VIP
-# Variables: leaf_id, mgmt_ip
-# Optional: vtep_vip_prefix (default: 10.1.3)
+# vPC: domain, peer-link, peer-switch, peer-gateway, keepalive via mgmt0, backup SVI, VTEP virtual IP
+#
+# Variables:
+#   leaf_id                       Leaf number (1, 2, ...)
+#   mgmt_ip                       mgmt0 address, used for the vPC peer-keepalive
+#
+# Optional variables:
+#   vtep_vip_prefix               First three octets of the vPC VTEP virtual IP (default: 10.1.3)
+#   vpc_peer_link_interfaces      Peer-link member interfaces (default: ["1/3", "1/4"])
+#   vpc_peer_link_port_channel    Peer-link port-channel ID (default: 500)
+#   vpc_backup_vlan               VLAN of the vPC backup SVI (default: 3600)
+#   vpc_backup_prefix             First three octets of the backup SVI subnets, one /30 per vPC domain (default: 10.1.4)
+#
+# The backup SVI is added to the underlay routing by underlay_ospf or underlay_isis and to PIM by underlay_multicast.
 
 feature:
   vpc: true
+  lacp: true
+  interface_vlan: true
 
 vpc:
   domain_id: ${floor((leaf_id + 1) / 2)}
+  peer_switch: true
   peer_gateway: true
   ip_arp_synchronize: true
   ipv6_nd_synchronize: true
   auto_recovery: true
+  auto_recovery_reload_delay: 360
   delay_restore: 150
-  delay_restore_interface_vlan: 30
+  peer_link_port_channel: ${try(vpc_peer_link_port_channel, 500)}
   keepalive:
     source_ip: ${mgmt_ip}
 %{ for device in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && floor((d.variables.leaf_id + 1) / 2) == floor((leaf_id + 1) / 2) && d.variables.leaf_id != leaf_id] }
     destination_ip: ${device.variables.mgmt_ip}
 %{ endfor }
+
+system:
+  nve_infra_vlans:
+    - vlans:
+        ids: [${try(vpc_backup_vlan, 3600)}]
+
+vlan:
+  vlans:
+    - id: ${try(vpc_backup_vlan, 3600)}
+      name: VPC_BACKUP
 
 interfaces:
   loopbacks:
@@ -25,6 +50,32 @@ interfaces:
       ip:
         secondary_addresses:
           - address: ${try(vtep_vip_prefix, "10.1.3")}.${floor((leaf_id + 1) / 2)}/32
+
+  ethernets:
+%{ for interface in try(vpc_peer_link_interfaces, ["1/3", "1/4"]) }
+    - id: ${interface}
+      description: vPC peer-link
+      switchport:
+        mode: trunk
+      channel_group: ${try(vpc_peer_link_port_channel, 500)}
+      channel_group_mode: active
+%{ endfor }
+
+  port_channels:
+    - id: ${try(vpc_peer_link_port_channel, 500)}
+      description: vPC peer-link
+      switchport:
+        mode: trunk
+      spanning_tree:
+        port_type: network
+
+  # Backup SVI: underlay routing between the vPC peers over the peer-link (/30 per vPC domain)
+  vlans:
+    - id: ${try(vpc_backup_vlan, 3600)}
+      description: vPC backup SVI
+      mtu: 9216
+      ip:
+        address: ${try(vpc_backup_prefix, "10.1.4")}.${4 * (floor((leaf_id + 1) / 2) - 1) + 2 - leaf_id % 2}/30
 
   nve:
     advertise_virtual_rmac: true

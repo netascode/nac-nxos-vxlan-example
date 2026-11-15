@@ -1,6 +1,16 @@
-# Underlay OSPF: process 1, area 0, interface assignments
-# Variables: leaf_id or spine_id
-# Optional: leaf_fabric_interface_start (default: 1), spine_fabric_module_start (default: 1), spine_fabric_interface_start (default: 1), spine_fabric_interface_max (default: 64)
+# Underlay OSPF: process UNDERLAY, area 0, interface assignments, vPC backup SVI
+#
+# Variables:
+#   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
+#
+# Optional variables:
+#   vpc_backup_vlan               VLAN of the vPC backup SVI (default: 3600)
+#   leaf_fabric_interface_start   First leaf uplink port on module 1 (default: 1)
+#   spine_fabric_module_start     First spine module with leaf-facing ports (default: 1)
+#   spine_fabric_interface_start  First leaf-facing port per spine module (default: 1)
+#   spine_fabric_interface_max    Last leaf-facing port per spine module (default: 64)
+#
+# Alternative to underlay_isis, use one of the two.
 
 feature:
   ospf: true
@@ -51,4 +61,13 @@ interfaces:
         area: 0
         network: point-to-point
 %{ endfor }
+%{ endfor }
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "VPC_LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+
+  vlans:
+    - id: ${try(vpc_backup_vlan, 3600)}
+      ospf:
+        process: UNDERLAY
+        area: 0
+        network: point-to-point
 %{ endfor }

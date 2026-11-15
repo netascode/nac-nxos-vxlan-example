@@ -1,6 +1,12 @@
 # Global device settings: hostname, MTU, spanning-tree, loopback0
-# Variables: leaf_id or spine_id
-# Optional: hostname (default: device name), leaf_loopback_prefix (default: 10.1.1), spine_loopback_prefix (default: 10.1.0)
+#
+# Variables:
+#   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
+#
+# Optional variables:
+#   hostname                      Hostname (default: device name)
+#   leaf_loopback_prefix          First three octets of the leaf loopback0 address (default: 10.1.1)
+#   spine_loopback_prefix         First three octets of the spine loopback0 address (default: 10.1.0)
 
 %{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
 system:

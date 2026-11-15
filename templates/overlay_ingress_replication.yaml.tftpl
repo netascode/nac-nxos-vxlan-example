@@ -1,0 +1,12 @@
+# Overlay ingress replication: BUM replication with BGP EVPN ingress replication
+#
+# Variables:
+#   leaf_id                       Leaf number (1, 2, ...)
+#
+# Alternative to underlay_multicast, use one of the two.
+
+%{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "LEAFS") && d.variables.leaf_id == try(leaf_id, -1)] }
+interfaces:
+  nve:
+    global_ingress_replication_protocol_bgp: true
+%{ endfor }

@@ -1,5 +1,12 @@
-# Overlay VXLAN: NVE interface, anycast gateway, suppress-ARP, ingress replication
-# Variables: anycast_gw_mac
+# Overlay VXLAN: NVE interface, anycast gateway, suppress-ARP, subnet redistribution route-map
+#
+# Variables:
+#   anycast_gw_mac                MAC address of the distributed anycast gateway
+#
+# Optional variables:
+#   subnet_route_tag              Route tag of the SVI subnets redistributed into BGP EVPN (default: 12345)
+#
+# BUM replication is added by underlay_multicast (multicast) or overlay_ingress_replication (ingress replication).
 
 feature:
   nv_overlay: true
@@ -14,4 +21,10 @@ interfaces:
     source_interface_type: loopback
     source_interface_id: 1
     global_suppress_arp: true
-    global_ingress_replication_protocol_bgp: true
+
+route_maps:
+  - name: fabric-rmap-redist-subnet
+    entries:
+      - order: 10
+        action: permit
+        match_tags: [${try(subnet_route_tag, 12345)}]
