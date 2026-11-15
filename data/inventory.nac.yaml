@@ -23,39 +23,39 @@ nxos:
 
   devices:
     - name: LEAF1
-      url: https://10.1.1.1
+      url: https://192.168.1.11
       device_groups:
         - FABRIC
         - LEAFS
         - VPC_LEAFS
       variables:
-        mgmt_ip: 10.1.1.1
+        mgmt_ip: 192.168.1.11
         leaf_id: 1
 
     - name: LEAF2
-      url: https://10.1.1.2
+      url: https://192.168.1.12
       device_groups:
         - FABRIC
         - LEAFS
         - VPC_LEAFS
       variables:
-        mgmt_ip: 10.1.1.2
+        mgmt_ip: 192.168.1.12
         leaf_id: 2
 
     - name: SPINE1
-      url: https://10.1.1.3
+      url: https://192.168.1.13
       device_groups:
         - FABRIC
         - SPINES
       variables:
-        mgmt_ip: 10.1.1.3
+        mgmt_ip: 192.168.1.13
         spine_id: 1
 
     - name: SPINE2
-      url: https://10.1.1.4
+      url: https://192.168.1.14
       device_groups:
         - FABRIC
         - SPINES
       variables:
-        mgmt_ip: 10.1.1.4
+        mgmt_ip: 192.168.1.14
         spine_id: 2
