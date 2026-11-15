@@ -4,6 +4,7 @@
 #   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
 #
 # Optional variables:
+#   underlay_bfd                  Enable BFD for IS-IS (default: false)
 #   leaf_loopback_prefix          First three octets of the leaf loopback0 address (default: 10.1.1)
 #   spine_loopback_prefix         First three octets of the spine loopback0 address (default: 10.1.0)
 #   vpc_backup_vlan               VLAN of the vPC backup SVI (default: 3600)
@@ -16,6 +17,9 @@
 
 feature:
   isis: true
+%{ if try(underlay_bfd, false) }
+  bfd: true
+%{ endif }
 
 routing:
   isis_instances:
@@ -29,6 +33,9 @@ routing:
 %{ endfor }
       address_families:
         - address_family: ipv4-unicast
+%{ if try(underlay_bfd, false) }
+          bfd: true
+%{ endif }
 
 interfaces:
   loopbacks:

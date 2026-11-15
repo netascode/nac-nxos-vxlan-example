@@ -5,6 +5,7 @@
 #   anycast_rp_ip                 Anycast RP address shared by the spines
 #
 # Optional variables:
+#   underlay_bfd                  Enable BFD for PIM (default: false)
 #   l2_mcast_group                BUM multicast group of all L2VNIs (default: 239.1.1.1)
 #   spine_loopback_prefix         First three octets of the spine loopback0 address (default: 10.1.0)
 #   vpc_backup_vlan               VLAN of the vPC backup SVI (default: 3600)
@@ -18,9 +19,15 @@
 
 feature:
   pim: true
+%{ if try(underlay_bfd, false) }
+  bfd: true
+%{ endif }
 
 routing:
   pim:
+%{ if try(underlay_bfd, false) }
+    bfd: true
+%{ endif }
     rp_addresses:
       - address: ${anycast_rp_ip}
 %{ for self in [for d in GLOBAL.devices : d if contains(d.device_groups, "SPINES") && d.variables.spine_id == try(spine_id, -1)] }

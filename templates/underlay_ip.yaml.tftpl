@@ -1,4 +1,4 @@
-# Underlay IP: BFD, loopback1 (VTEP), fabric interfaces
+# Underlay IP: loopback1 (VTEP), fabric interfaces
 #
 # Variables:
 #   leaf_id or spine_id           Leaf or spine number (1, 2, ...)
@@ -9,9 +9,6 @@
 #   spine_fabric_module_start     First spine module with leaf-facing ports (default: 1)
 #   spine_fabric_interface_start  First leaf-facing port per spine module (default: 1)
 #   spine_fabric_interface_max    Last leaf-facing port per spine module (default: 64)
-
-feature:
-  bfd: true
 
 interfaces:
   loopbacks:
